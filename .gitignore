@@ -1,0 +1,17 @@
+# raw CMS files (download with scripts/download_data.sh)
+data/raw/*
+!data/raw/.gitkeep
+# DuckDB database built by dbt
+*.duckdb
+*.duckdb.wal
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+logs/
+# python
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+.pytest_cache/
+.DS_Store

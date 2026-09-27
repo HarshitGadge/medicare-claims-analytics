@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: stg_synpuf__beneficiary_years
+    description: One row per beneficiary per coverage year, typed and decoded.
+    columns:
+      - name: bene_id
+        data_tests: [not_null]
+      - name: coverage_year
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [2008, 2009, 2010]}
+      - name: sex
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['Male', 'Female']}
+      - name: race
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['White', 'Black', 'Other', 'Hispanic']}
+      - name: ssa_state_code
+        data_tests:
+          - relationships:
+              arguments: {to: ref('ssa_state_codes'), field: ssa_state_code}
+
+  - name: stg_synpuf__inpatient_claims
+    description: One row per inpatient claim segment.
+    columns:
+      - name: claim_id
+        data_tests: [not_null]
+      - name: admission_date
+        data_tests: [not_null]
+      - name: discharge_date
+        data_tests: [not_null]
+      - name: medicare_paid
+        description: Can be negative on adjustment claims (55 segments in Sample 1).
+
+  - name: stg_synpuf__outpatient_claims
+    description: One row per outpatient claim segment.
+    columns:
+      - name: claim_id
+        data_tests: [not_null]

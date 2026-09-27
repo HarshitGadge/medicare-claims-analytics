@@ -1,0 +1,84 @@
+version: 2
+
+models:
+  - name: dim_beneficiaries
+    description: One row per beneficiary; demographics from the latest year they appear.
+    columns:
+      - name: bene_id
+        data_tests: [unique, not_null]
+
+  - name: fct_member_years
+    description: >
+      One row per beneficiary per year. Spending by setting comes from the beneficiary summary file
+      (inpatient, outpatient and carrier / professional); utilization is counted from claims.
+      member_months = max(Part A months, Part B months).
+    columns:
+      - name: member_year_id
+        data_tests: [unique, not_null]
+      - name: member_months
+        data_tests:
+          - accepted_values:
+              arguments: {values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+      - name: chronic_condition_count
+        data_tests:
+          - not_null
+
+  - name: fct_inpatient_stays
+    description: >
+      One row per hospital stay with 30-day all-cause readmission flags. Index stays are discharged alive
+      with at least 30 days of follow-up before the end of the data; a readmission is the next stay starting
+      1–30 days after discharge. Condition groups use simplified CMS HRRP ICD-9 cohorts (see macros/).
+    columns:
+      - name: stay_id
+        data_tests: [unique, not_null]
+      - name: bene_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_beneficiaries'), field: bene_id}
+      - name: condition_group
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['AMI', 'Heart failure', 'Pneumonia', 'COPD', 'Other']}
+
+  - name: agg_utilization_by_year
+    description: PMPM by setting, admissions / inpatient days / outpatient claims per 1,000 member-years.
+    columns:
+      - name: coverage_year
+        data_tests: [unique]
+  - name: agg_cost_concentration
+    description: Share of total spending by member spending band (top 1%, next 4%, next 15%, next 30%, bottom 50%).
+  - name: agg_chronic_burden
+    description: PMPM, admissions per 1,000 and share of spend by number of chronic conditions.
+  - name: agg_conditions
+    description: Prevalence of each chronic condition and PMPM with vs without it.
+  - name: agg_readmissions
+    description: 30-day readmission rate by discharge year and index condition group.
+  - name: agg_state_year
+    description: State-level members, PMPM, admissions per 1,000 and readmission rate by year.
+
+unit_tests:
+  - name: readmission_window_and_exclusions
+    description: >
+      Next stay 1–30 days after discharge counts as a readmission; 31 days does not; a stay ending in death is
+      not an index stay; a discharge in the last 30 days of data is not an index stay (no full follow-up).
+    model: fct_inpatient_stays
+    given:
+      - input: ref('int_inpatient_stays')
+        rows:
+          - {stay_id: A-001, bene_id: A, stay_seq: 1, admission_date: 2009-01-01, discharge_date: 2009-01-05, n_claims: 1, includes_transfer_or_overlap: false, principal_dx: '4280', drg_code: '291', discharging_provider_id: p1, medicare_paid: 1000, bene_cost_share: 0}
+          - {stay_id: A-002, bene_id: A, stay_seq: 2, admission_date: 2009-02-04, discharge_date: 2009-02-06, n_claims: 1, includes_transfer_or_overlap: false, principal_dx: '486', drg_code: '194', discharging_provider_id: p1, medicare_paid: 1000, bene_cost_share: 0}
+          - {stay_id: A-003, bene_id: A, stay_seq: 3, admission_date: 2009-03-09, discharge_date: 2009-03-10, n_claims: 1, includes_transfer_or_overlap: false, principal_dx: '41071', drg_code: '280', discharging_provider_id: p1, medicare_paid: 1000, bene_cost_share: 0}
+          - {stay_id: B-001, bene_id: B, stay_seq: 1, admission_date: 2009-05-01, discharge_date: 2009-05-03, n_claims: 1, includes_transfer_or_overlap: false, principal_dx: '4280', drg_code: '291', discharging_provider_id: p2, medicare_paid: 1000, bene_cost_share: 0}
+          - {stay_id: C-001, bene_id: C, stay_seq: 1, admission_date: 2010-12-10, discharge_date: 2010-12-15, n_claims: 1, includes_transfer_or_overlap: false, principal_dx: '496', drg_code: '190', discharging_provider_id: p3, medicare_paid: 1000, bene_cost_share: 0}
+      - input: ref('dim_beneficiaries')
+        rows:
+          - {bene_id: A, death_date: null}
+          - {bene_id: B, death_date: 2009-05-03}
+          - {bene_id: C, death_date: null}
+    expect:
+      rows:
+        - {stay_id: A-001, condition_group: Heart failure, days_to_next_admission: 30, is_index_stay: true, is_readmitted_30d: true}
+        - {stay_id: A-002, condition_group: Pneumonia, days_to_next_admission: 31, is_index_stay: true, is_readmitted_30d: false}
+        - {stay_id: A-003, condition_group: AMI, days_to_next_admission: null, is_index_stay: true, is_readmitted_30d: false}
+        - {stay_id: B-001, condition_group: Heart failure, days_to_next_admission: null, is_index_stay: false, is_readmitted_30d: false}
+        - {stay_id: C-001, condition_group: COPD, days_to_next_admission: null, is_index_stay: false, is_readmitted_30d: false}

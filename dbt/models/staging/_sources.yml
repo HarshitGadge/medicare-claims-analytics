@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: synpuf
+    description: >
+      CMS 2008–2010 Data Entrepreneurs' Synthetic Public Use File (DE-SynPUF), Sample 1.
+      Read straight from the CSVs with DuckDB; every column arrives as text and is typed in staging.
+    tables:
+      - name: beneficiary_summary
+        description: One row per beneficiary per calendar year (three files, 2008–2010).
+        meta:
+          external_location: "read_csv('{{ var('raw_dir') }}/DE1_0_20*_Beneficiary_Summary_File_Sample_1.csv', all_varchar = true, filename = true)"
+      - name: inpatient_claims
+        description: Institutional inpatient claims, one row per claim segment.
+        meta:
+          external_location: "read_csv('{{ var('raw_dir') }}/DE1_0_2008_to_2010_Inpatient_Claims_Sample_1.csv', all_varchar = true)"
+      - name: outpatient_claims
+        description: Institutional outpatient claims, one row per claim segment.
+        meta:
+          external_location: "read_csv('{{ var('raw_dir') }}/DE1_0_2008_to_2010_Outpatient_Claims_Sample_1.csv', all_varchar = true)"

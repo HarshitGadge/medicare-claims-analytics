@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: int_inpatient_claims
+    description: One row per inpatient claim, segments combined.
+    columns:
+      - name: claim_id
+        data_tests: [unique, not_null]
+
+  - name: int_inpatient_stays
+    description: >
+      One row per hospital stay. A beneficiary's claims are merged into one stay when they overlap, start on the previous
+      discharge date, or start the next day at a different provider (a transfer). Gaps-and-islands on admission / discharge dates.
+    columns:
+      - name: stay_id
+        data_tests: [unique, not_null]
+
+  - name: int_outpatient_claims
+    description: One row per outpatient claim, segments combined.
+    columns:
+      - name: claim_id
+        data_tests: [unique, not_null]
+
+unit_tests:
+  - name: transfers_and_overlaps_merge_into_one_stay
+    description: >
+      Merged into one stay: a same-day admission, a claim overlapping an earlier stay, and a next-day admission at a
+      different provider (transfer). A next-day admission at the same provider starts a new stay.
+    model: int_inpatient_stays
+    given:
+      - input: ref('int_inpatient_claims')
+        rows:
+          - {bene_id: A, claim_id: c1, admission_date: 2009-01-01, discharge_date: 2009-01-05, provider_id: p1, drg_code: '291', principal_dx: '4280', medicare_paid: 5000, bene_cost_share: 100, utilization_days: 4, n_segments: 1}
+          - {bene_id: A, claim_id: c2, admission_date: 2009-01-05, discharge_date: 2009-01-09, provider_id: p2, drg_code: '291', principal_dx: '4280', medicare_paid: 3000, bene_cost_share: 0, utilization_days: 4, n_segments: 1}
+          - {bene_id: A, claim_id: c3, admission_date: 2009-01-10, discharge_date: 2009-01-12, provider_id: p2, drg_code: '194', principal_dx: '486', medicare_paid: 4000, bene_cost_share: 0, utilization_days: 2, n_segments: 1}
+          - {bene_id: B, claim_id: c4, admission_date: 2009-03-01, discharge_date: 2009-03-10, provider_id: p3, drg_code: '871', principal_dx: '0389', medicare_paid: 9000, bene_cost_share: 0, utilization_days: 9, n_segments: 1}
+          - {bene_id: B, claim_id: c5, admission_date: 2009-03-04, discharge_date: 2009-03-06, provider_id: p4, drg_code: '871', principal_dx: '0389', medicare_paid: 1000, bene_cost_share: 0, utilization_days: 2, n_segments: 1}
+          - {bene_id: B, claim_id: c6, admission_date: 2009-03-11, discharge_date: 2009-03-14, provider_id: p5, drg_code: '871', principal_dx: '0389', medicare_paid: 2000, bene_cost_share: 0, utilization_days: 3, n_segments: 1}
+    expect:
+      rows:
+        - {stay_id: A-001, admission_date: 2009-01-01, discharge_date: 2009-01-09, n_claims: 2, medicare_paid: 8000, discharging_provider_id: p2}
+        - {stay_id: A-002, admission_date: 2009-01-10, discharge_date: 2009-01-12, n_claims: 1, medicare_paid: 4000, discharging_provider_id: p2}
+        - {stay_id: B-001, admission_date: 2009-03-01, discharge_date: 2009-03-14, n_claims: 3, medicare_paid: 12000, discharging_provider_id: p5}

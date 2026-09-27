@@ -1,0 +1,4 @@
+# Minimal requirements for deploying the dashboard alone (e.g. Streamlit Community Cloud).
+streamlit>=1.45
+pandas>=2.2
+plotly>=6.0

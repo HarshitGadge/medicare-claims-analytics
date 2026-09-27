@@ -1,0 +1,8 @@
+medicare:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Relative to the directory dbt is run from (the repo root).
+      path: "{{ env_var('DUCKDB_PATH', 'medicare.duckdb') }}"
+      threads: 4
