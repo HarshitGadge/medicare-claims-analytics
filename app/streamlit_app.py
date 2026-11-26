@@ -72,7 +72,7 @@ with tab_cost:
     fig.update_xaxes(type="category")
     fig.update_layout(bargap=0.25, bargroupgap=0.06)
     fig.update_traces(hovertemplate="%{x} · %{fullData.name}: $%{y:,.0f} PMPM<extra></extra>")
-    c1.plotly_chart(style(fig), use_container_width=True)
+    c1.plotly_chart(style(fig), width="stretch")
 
     c = conc[conc.coverage_year == year].sort_values("spend_band")
     c = c.assign(band=c.spend_band.str[3:], share_of_members=c.members / c.members.sum())
@@ -83,7 +83,7 @@ with tab_cost:
     fig.update_layout(title=f"Share of {year} spending by member spending band")
     fig.update_yaxes(autorange="reversed")
     fig.update_xaxes(title="% of total Medicare paid", range=[0, 45])
-    c2.plotly_chart(style(fig), use_container_width=True)
+    c2.plotly_chart(style(fig), width="stretch")
 
     table = util.set_index("coverage_year")[
         ["members", "member_months", "pmpm_total", "pmpm_ip", "pmpm_op", "pmpm_carrier", "admits_per_1000",
@@ -91,7 +91,7 @@ with tab_cost:
     table.index.name = "Year"
     table.columns = ["Members", "Member months", "PMPM", "PMPM inpatient", "PMPM outpatient", "PMPM professional",
                      "Admits / 1,000", "IP days / 1,000", "OP claims / 1,000", "Avg length of stay"]
-    st.dataframe(table, use_container_width=True)
+    st.dataframe(table, width="stretch")
 
 with tab_chronic:
     c1, c2 = st.columns(2)
@@ -101,7 +101,7 @@ with tab_chronic:
                  title=f"PMPM by number of chronic conditions, {year}")
     fig.update_traces(customdata=b[["members", "share_of_spend"]],
                       hovertemplate="%{x} conditions: $%{y:,.0f} PMPM<br>%{customdata[0]:,} members, %{customdata[1]:.0%} of spend<extra></extra>")
-    c1.plotly_chart(style(fig), use_container_width=True)
+    c1.plotly_chart(style(fig), width="stretch")
 
     cd = conditions[conditions.coverage_year == year].sort_values("prevalence")
     fig = go.Figure()
@@ -111,7 +111,7 @@ with tab_chronic:
                 hovertemplate="%{y}: $%{x:,.0f} PMPM without<extra></extra>")
     fig.update_layout(barmode="group", title=f"PMPM with vs without each condition, {year}")
     fig.update_xaxes(title="PMPM", tickprefix="$")
-    c2.plotly_chart(style(fig, 420), use_container_width=True)
+    c2.plotly_chart(style(fig, 420), width="stretch")
 
 with tab_readm:
     st.caption("Index stay: discharged alive with 30 days of follow-up in the data. Readmission: any stay starting 1–30 days later. "
@@ -123,11 +123,11 @@ with tab_readm:
                  labels={"condition_group": "", "readmission_rate_30d": "30-day readmission rate", "color": "Year"},
                  title="30-day all-cause readmission rate by index condition")
     fig.update_yaxes(tickformat=".0%")
-    st.plotly_chart(style(fig, 360), use_container_width=True)
+    st.plotly_chart(style(fig, 360), width="stretch")
     st.info("The rate falls from 2008 to 2010 because later years of the synthetic file have fewer follow-up claims. "
             "Compare conditions within a year rather than across years.")
     st.dataframe(readm.pivot(index="condition_group", columns="discharge_year", values=["index_stays", "readmission_rate_30d"]).round(3),
-                 use_container_width=True)
+                 width="stretch")
 
 with tab_map:
     metric = st.radio("Metric", ["PMPM", "Admissions per 1,000", "30-day readmission rate"], horizontal=True)
@@ -137,5 +137,5 @@ with tab_map:
                         color_continuous_scale=["#cde2fb", "#6da7ec", "#2a78d6", "#184f95"],
                         hover_name="state_name", hover_data={"members": ":,", col: ":.3f", "state_abbrev": False},
                         title=f"{metric} by state, {year}")
-    st.plotly_chart(style(fig, 460), use_container_width=True)
+    st.plotly_chart(style(fig, 460), width="stretch")
     st.caption("States with few members swing more from year to year. Code 54 ('Other') is excluded from the map.")
