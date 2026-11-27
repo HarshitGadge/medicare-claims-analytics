@@ -1,6 +1,8 @@
 # Medicare Claims Analytics: Cost, Readmissions and Care-Management Targeting
 
-[![ci](https://github.com/HarshitGadge/medicare-claims-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/HarshitGadge/medicare-claims-analytics/actions/workflows/ci.yml)
+[![ci](https://github.com/HarshitGadge/medicare-claims-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/HarshitGadge/medicare-claims-analytics/actions/workflows/ci.yml) [![Live dashboard](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://hgadge-medicare-claims.streamlit.app)
+
+**Live dashboard:** [hgadge-medicare-claims.streamlit.app](https://hgadge-medicare-claims.streamlit.app)
 
 An end-to-end claims analytics project on CMS Medicare claims data: a **dbt + DuckDB** pipeline that turns raw beneficiary and claim
 files into tested fact tables and plan-level metrics (PMPM, utilization per 1,000, 30-day readmissions), an analysis of where the money
